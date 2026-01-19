@@ -1,7 +1,8 @@
-import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
+import { beforeEach, describe, it } from 'node:test'
 
 import { fetchAssemblyHub, fetchingAssemblies } from './fetchAssemblyHub.ts'
+
 import type { HubSession } from './fetchAssemblyHub.ts'
 
 function createMockSession(): {

@@ -6,9 +6,6 @@ import { version } from '../package.json'
 
 import type { HubSession } from './fetchAssemblyHub.ts'
 
-export { fetchAssemblyHub, fetchingAssemblies }
-export type { HubSession }
-
 export default class HubsViewerPlugin extends Plugin {
   name = 'HubsViewerPlugin'
   version = version
@@ -39,5 +36,11 @@ export default class HubsViewerPlugin extends Plugin {
     )
   }
 
-  configure(pluginManager: PluginManager) {}
+  configure(_pluginManager: PluginManager) {}
 }
+
+export {
+  type HubSession,
+  fetchAssemblyHub,
+  fetchingAssemblies,
+} from './fetchAssemblyHub.ts'
