@@ -18,10 +18,10 @@
     "start": "node esbuild.mjs --watch",
     "test": "node --experimental-strip-types --test src/fetchAssemblyHub.test.ts",
     "format": "prettier --write .",
-    "prebuild": "npm run clean",
+    "prebuild": "yarn clean",
     "build": "tsc && NODE_ENV=production node esbuild.mjs",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0",
-    "prepack": "npm run build",
+    "prepack": "yarn build",
     "postversion": "git push --follow-tags"
   },
   "devDependencies": {
