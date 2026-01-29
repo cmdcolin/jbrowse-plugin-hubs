@@ -43,7 +43,7 @@ function mockFetch(config: unknown, ok = true, status = 200) {
     ok,
     status,
     json: async () => config,
-  })) as typeof fetch
+  })) as unknown as typeof fetch
   return () => {
     globalThis.fetch = originalFetch
   }
@@ -126,7 +126,7 @@ describe('fetchAssemblyHub', () => {
     const originalFetch = globalThis.fetch
     globalThis.fetch = (async () => {
       throw new Error('Network error')
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     fetchingAssemblies.add('hg38')
     await fetchAssemblyHub(session, 'hg38')
@@ -162,5 +162,94 @@ describe('extension point handler', () => {
     fetchingAssemblies.clear()
     const shouldFetch = !fetchingAssemblies.has('hg38')
     assert.strictEqual(shouldFetch, true)
+  })
+})
+
+describe('GenArk assembly support', () => {
+  beforeEach(() => {
+    fetchingAssemblies.clear()
+  })
+
+  it('fetches GenArk assembly with GCF_ prefix', async () => {
+    const { session, calls } = createMockSession()
+    const mockConfig = {
+      assemblies: [{ name: 'GCF_009858895.2', sequence: {} }],
+      tracks: [],
+    }
+
+    let fetchedUrl = ''
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (url: string) => {
+      fetchedUrl = url
+      return {
+        ok: true,
+        status: 200,
+        json: async () => mockConfig,
+      }
+    }) as unknown as typeof fetch
+
+    fetchingAssemblies.add('GCF_009858895.2')
+    await fetchAssemblyHub(session, 'GCF_009858895.2')
+    globalThis.fetch = originalFetch
+
+    assert.strictEqual(
+      fetchedUrl,
+      'https://jbrowse.org/hubs/genark/GCF/009/858/895/GCF_009858895.2/config.json',
+    )
+    assert.strictEqual(calls.addSessionAssembly.length, 1)
+  })
+
+  it('fetches GenArk assembly with GCA_ prefix', async () => {
+    const { session, calls } = createMockSession()
+    const mockConfig = {
+      assemblies: [{ name: 'GCA_000001405.15', sequence: {} }],
+      tracks: [],
+    }
+
+    let fetchedUrl = ''
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (url: string) => {
+      fetchedUrl = url
+      return {
+        ok: true,
+        status: 200,
+        json: async () => mockConfig,
+      }
+    }) as unknown as typeof fetch
+
+    fetchingAssemblies.add('GCA_000001405.15')
+    await fetchAssemblyHub(session, 'GCA_000001405.15')
+    globalThis.fetch = originalFetch
+
+    assert.strictEqual(
+      fetchedUrl,
+      'https://jbrowse.org/hubs/genark/GCA/000/001/405/GCA_000001405.15/config.json',
+    )
+    assert.strictEqual(calls.addSessionAssembly.length, 1)
+  })
+
+  it('uses UCSC URL for non-GenArk assemblies', async () => {
+    const { session } = createMockSession()
+    const mockConfig = {
+      assemblies: [{ name: 'hg38', sequence: {} }],
+      tracks: [],
+    }
+
+    let fetchedUrl = ''
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (url: string) => {
+      fetchedUrl = url
+      return {
+        ok: true,
+        status: 200,
+        json: async () => mockConfig,
+      }
+    }) as unknown as typeof fetch
+
+    fetchingAssemblies.add('hg38')
+    await fetchAssemblyHub(session, 'hg38')
+    globalThis.fetch = originalFetch
+
+    assert.strictEqual(fetchedUrl, 'https://jbrowse.org/ucsc/hg38/config.json')
   })
 })

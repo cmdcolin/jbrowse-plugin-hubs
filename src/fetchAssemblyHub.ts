@@ -8,11 +8,36 @@ export interface HubSession {
   notifyError: (msg: string, e: unknown) => void
 }
 
+function getGenArkConfigUrl(accession: string) {
+  const [base, rest] = accession.split('_')
+  if (!rest) {
+    return undefined
+  }
+  const match = rest.match(/.{1,3}/g)
+  if (!match || match.length < 3) {
+    return undefined
+  }
+  const [b1, b2, b3] = match
+  return `https://jbrowse.org/hubs/genark/${base}/${b1}/${b2}/${b3}/${accession}/config.json`
+}
+
+function getConfigUrl(assemblyName: string) {
+  // GenArk assemblies (GCA_* or GCF_*)
+  if (assemblyName.startsWith('GCA_') || assemblyName.startsWith('GCF_')) {
+    return getGenArkConfigUrl(assemblyName)
+  }
+  // UCSC assemblies (hg38, mm10, etc.)
+  return `https://jbrowse.org/ucsc/${assemblyName}/config.json`
+}
+
 export async function fetchAssemblyHub(
   session: HubSession,
   assemblyName: string,
 ) {
-  const url = `https://jbrowse.org/ucsc/${assemblyName}/config.json`
+  const url = getConfigUrl(assemblyName)
+  if (!url) {
+    return
+  }
   try {
     const response = await fetch(url)
     if (!response.ok) {
