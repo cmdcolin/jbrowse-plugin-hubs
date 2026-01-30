@@ -1,10 +1,33 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 
-import { fetchAssemblyHub, fetchingAssemblies } from './fetchAssemblyHub.ts'
 import { version } from '../package.json'
 
-import type { HubSession } from './fetchAssemblyHub.ts'
+interface Session {
+  makeConnection: (conf: unknown) => void
+  addConnectionConf: (conf: unknown) => void
+  connections: { connectionId: string }[]
+}
+
+function getGenArkConfigUrl(accession: string) {
+  const [base, rest] = accession.split('_')
+  if (!rest) {
+    return undefined
+  }
+  const match = rest.match(/.{1,3}/g)
+  if (!match || match.length < 3) {
+    return undefined
+  }
+  const [b1, b2, b3] = match
+  return `https://jbrowse.org/hubs/genark/${base}/${b1}/${b2}/${b3}/${accession}/config.json`
+}
+
+function getConfigUrl(assemblyName: string) {
+  if (assemblyName.startsWith('GCA_') || assemblyName.startsWith('GCF_')) {
+    return getGenArkConfigUrl(assemblyName)
+  }
+  return `https://jbrowse.org/ucsc/${assemblyName}/config.json`
+}
 
 export default class HubsViewerPlugin extends Plugin {
   name = 'HubsViewerPlugin'
@@ -14,33 +37,30 @@ export default class HubsViewerPlugin extends Plugin {
     pluginManager.addToExtensionPoint(
       'Core-handleUnrecognizedAssembly',
       (_defaultResult, args) => {
-        const session = args.session as HubSession | undefined
+        const session = args.session as Session | undefined
         const assemblyName = args.assemblyName as string | undefined
-
-        // Skip if missing required args
         if (!session || !assemblyName) {
           return
         }
-
-        // Skip if already fetching (must check this first to prevent recursion)
-        if (fetchingAssemblies.has(assemblyName)) {
+        const uri = getConfigUrl(assemblyName)
+        if (!uri) {
           return
         }
-
-        // Mark as fetching before any other checks that might re-trigger this
-        fetchingAssemblies.add(assemblyName)
-
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        fetchAssemblyHub(session, assemblyName)
+        const connectionId = `jb2hub-${assemblyName}`
+        if (!session.connections.find(f => f.connectionId === connectionId)) {
+          const conf = {
+            type: 'JB2HubConnection',
+            uri,
+            name: `conn_${assemblyName}`,
+            assemblyNames: [assemblyName],
+            connectionId,
+          }
+          session.addConnectionConf(conf)
+          session.makeConnection(conf)
+        }
       },
     )
   }
 
   configure(_pluginManager: PluginManager) {}
 }
-
-export {
-  type HubSession,
-  fetchAssemblyHub,
-  fetchingAssemblies,
-} from './fetchAssemblyHub.ts'

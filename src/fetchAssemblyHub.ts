@@ -25,9 +25,10 @@ function getConfigUrl(assemblyName: string) {
   // GenArk assemblies (GCA_* or GCF_*)
   if (assemblyName.startsWith('GCA_') || assemblyName.startsWith('GCF_')) {
     return getGenArkConfigUrl(assemblyName)
+  } else {
+    // UCSC assemblies (hg38, mm10, etc.)
+    return `https://jbrowse.org/ucsc/${assemblyName}/config.json`
   }
-  // UCSC assemblies (hg38, mm10, etc.)
-  return `https://jbrowse.org/ucsc/${assemblyName}/config.json`
 }
 
 export async function fetchAssemblyHub(
