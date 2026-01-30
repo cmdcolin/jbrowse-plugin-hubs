@@ -49,7 +49,7 @@ export default class HubsViewerPlugin extends Plugin {
         const connectionId = `jb2hub-${assemblyName}`
         if (!session.connections.find(f => f.connectionId === connectionId)) {
           const conf = {
-            type: 'JB2HubConnection',
+            type: 'JB2TrackHubConnection',
             uri,
             name: `conn_${assemblyName}`,
             assemblyNames: [assemblyName],
